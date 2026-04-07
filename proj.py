@@ -2,26 +2,30 @@ import socket
 import ssl
 import threading
 
+
 # Service Identification Logic
 def identify_service(banner):
-    banner = banner.lower()
-
-    if "apache" in banner:
-        return "Apache Web Server"
-    elif "nginx" in banner:
-        return "Nginx Web Server"
-    elif "iis" in banner:
-        return "Microsoft IIS"
-    elif "cloudflare" in banner:
-        return "Cloudflare CDN / Reverse Proxy"
-    elif "gws" in banner:
-        return "Google Web Server"
-    elif "ftp" in banner:
-        return "FTP Server"
-    elif "error" in banner:
+    # Check for connection errors first, before scanning banner content
+    if banner.startswith("Error:"):
         return "Connection Failed"
+
+    banner_lower = banner.lower()
+
+    if "apache" in banner_lower:
+        return "Apache Web Server"
+    elif "nginx" in banner_lower:
+        return "Nginx Web Server"
+    elif "iis" in banner_lower:
+        return "Microsoft IIS"
+    elif "cloudflare" in banner_lower:
+        return "Cloudflare CDN / Reverse Proxy"
+    elif "gws" in banner_lower:
+        return "Google Web Server"
+    elif "ftp" in banner_lower:
+        return "FTP Server"
     else:
         return "Unknown Service"
+
 
 # HTTP Banner Grabbing
 def grab_http_banner(host, port, use_ssl=False):
@@ -35,13 +39,13 @@ def grab_http_banner(host, port, use_ssl=False):
 
         sock.connect((host, port))
 
-        request = "HEAD / HTTP/1.1\r\nHost: {}\r\n\r\n".format(host)  #minimal HTTP req for figuring out server software
+        # Minimal HTTP request to retrieve server software info
+        request = "HEAD / HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n".format(host)
         sock.send(request.encode())
 
         response = sock.recv(4096).decode(errors="ignore")
 
         sock.close()
-
         return response
 
     except Exception as e:
@@ -59,7 +63,6 @@ def grab_ftp_banner(host, port=21):
         banner = sock.recv(1024).decode(errors="ignore")
 
         sock.close()
-
         return banner
 
     except Exception as e:
@@ -68,12 +71,11 @@ def grab_ftp_banner(host, port=21):
 
 # Fingerprint Target
 def fingerprint_target(host):
-
     print(f"\nScanning {host}")
 
-    http_banner = grab_http_banner(host, 80)
-    https_banner = grab_http_banner(host, 443, use_ssl=True)
-    ftp_banner = grab_ftp_banner(host)
+    http_banner = grab_http_banner(host, 8080)
+    https_banner = grab_http_banner(host, 8443, use_ssl=True)
+    ftp_banner = grab_ftp_banner(host, 2121)
 
     print("\nHTTP Banner:")
     print(host, http_banner)
@@ -85,7 +87,6 @@ def fingerprint_target(host):
     print(host, ftp_banner)
 
     print(f"\nIdentified Services for {host}:")
-
     print("HTTP:", identify_service(http_banner))
     print("HTTPS:", identify_service(https_banner))
     print("FTP:", identify_service(ftp_banner))
@@ -93,7 +94,6 @@ def fingerprint_target(host):
 
 # Multi-Server Testing
 def scan_targets(targets):
-
     threads = []
 
     for host in targets:
@@ -105,10 +105,10 @@ def scan_targets(targets):
         t.join()
 
 
-# Target List
-targets = [
-    "example.com",
-    "scanme.nmap.org"
-]
+if __name__ == "__main__":
+    # Target List
+    targets = [
+        "127.0.0.1"
+    ]
 
-scan_targets(targets)
+    scan_targets(targets)
