@@ -35,6 +35,8 @@ def grab_http_banner(host, port, use_ssl=False):
 
         if use_ssl:
             context = ssl.create_default_context()
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
             sock = context.wrap_socket(sock, server_hostname=host)
 
         sock.connect((host, port))
@@ -106,9 +108,10 @@ def scan_targets(targets):
 
 
 if __name__ == "__main__":
-    # Target List
-    targets = [
-        "127.0.0.1"
-    ]
+    # Replace this with the actual IP address of the server machine.
+    # On the server, run: hostname -I (Linux/Mac) or ipconfig (Windows)
+    # to find its IP (e.g. 192.168.1.42).
+    SERVER_IP = "192.168.x.x"
 
+    targets = [SERVER_IP]
     scan_targets(targets)
